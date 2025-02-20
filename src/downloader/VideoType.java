@@ -2,6 +2,8 @@ package downloader;
 
 /**
  * Supported types for YouTube videos that can be downloaded.
+ *
+ * @author Gavin Borne
  */
 public enum VideoType {
     BOTH("video-and-audio"),

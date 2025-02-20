@@ -1,5 +1,9 @@
-"""Main file for the downloader."""
+"""Flask server for the downloader.
 
+author: Gavin Borne
+"""
+
+import logging
 from os.path import join
 
 import yt_dlp  # type: ignore
@@ -15,6 +19,11 @@ class InvalidVideoTypeError(Exception):
 
 app = Flask(__name__)
 CORS(app)
+
+logging.basicConfig(
+    filename="logs/flask-logs.log",
+    format="[{%(asctime)s}] [%(levelname)s] %(name)s - %(message)s (%(filename)s:%(lineno)s)",
+)
 
 
 @app.route("/favicon.ico")
@@ -34,25 +43,28 @@ def download_video():  # pylint: disable=too-many-return-statements
 
     video_url = request.args.get("url")
     if not video_url:
+        logging.error("Missing 'url' parameter")
         return jsonify({"error": "Missing 'url' parameter"}), 400
 
     video_type = request.args.get("type")
     if not video_type:
+        logging.error("Missing 'type' parameter")
         return jsonify({"error": "Missing 'type' parameter"}), 400
 
     out_dir = request.args.get("dir")
     if not out_dir:
+        logging.error("Missing 'dir' parameter")
         return jsonify({"error": "Missing 'dir' parameter"})
 
     filename = request.args.get("fn")
     if not filename:
+        logging.error("Missing 'fn' parameter")
         return jsonify({"error": "Missing 'fn' parameter"})
 
     try:
         yt_dlp_options = {
             "outtmpl": join(out_dir, f"{filename}.%(ext)s"),
             "quiet": True,  # Disable output except for errors
-            "reject": ".webm",
         }
 
         match video_type:
@@ -63,6 +75,7 @@ def download_video():  # pylint: disable=too-many-return-statements
             case "audio":
                 yt_dlp_options["format"] = "bestaudio"
             case _:
+                logging.error("Invalid video type given: %s", repr(video_type))
                 raise InvalidVideoTypeError(
                     f"invalid video type given: {repr(video_type)}; "
                     + "expected 'video' or 'audio'"
@@ -79,9 +92,11 @@ def download_video():  # pylint: disable=too-many-return-statements
                 "video_size": info.get("filesize"),
             }
 
+        logging.info("Download successful")
         return jsonify(response), 200
 
     except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Error: %s %s", type(e).__name__, str(e))
         return jsonify({"error": type(e).__name__ + str(e)}), 400
 
 

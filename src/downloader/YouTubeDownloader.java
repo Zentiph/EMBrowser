@@ -13,6 +13,13 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 
 
+/**
+ * YouTube video downloader class.
+ * Takes a YouTube video URL and downloads the video based on options given.
+ * Can be run via the command line.
+ *
+ * @author Gavin Borne
+ */
 public class YouTubeDownloader {
     private static Process flaskServerProcess;
     private static boolean serverRunning = false;
@@ -176,6 +183,13 @@ public class YouTubeDownloader {
         try {
             String command = "python src/downloader/app.py";
             flaskServerProcess = new ProcessBuilder(command.split(" ")).start();
+
+            try { // Wait for the server to start
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                System.out.println("Thread interrupted while waiting for flask server: " + e.getMessage());
+                e.printStackTrace();
+            }
 
             serverRunning = true;
         } catch (IOException e) {
